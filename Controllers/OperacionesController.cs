@@ -104,7 +104,6 @@ public class OperacionesController : Controller
         }
         return RedirectToAction(nameof(Incidencias));
     }
-
     // GET /Operaciones/Estado -> estado vigente para reconciliar al reconectar WS.
     [HttpGet]
     public async Task<IActionResult> Estado()
