@@ -1,9 +1,18 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using bici_bussiness.Data;
 using bici_bussiness.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Render termina TLS en su proxy: respetar X-Forwarded-Proto/For.
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    o.KnownNetworks.Clear();
+    o.KnownProxies.Clear();
+});
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -16,6 +25,7 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IAlgoliaService, AlgoliaService>();
+builder.Services.AddHttpClient<IPieSocketPublisher, PieSocketPublisher>();
 
 // Pregunta 2 (Redis): caché distribuida para el listado general.
 // Sin REDIS_CONNECTION apunta a localhost y el controller cae a DB con log honesto.
@@ -24,6 +34,8 @@ builder.Services.AddStackExchangeRedisCache(o => o.Configuration = redisConn);
 
 var app = builder.Build();
 await SeedData.EnsureSeedAsync(app.Services);
+
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

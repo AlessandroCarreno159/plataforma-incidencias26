@@ -1,0 +1,10 @@
+bin/
+obj/
+out/
+.git/
+.vs/
+*.user
+app.db
+*.db-shm
+*.db-wal
+*.md

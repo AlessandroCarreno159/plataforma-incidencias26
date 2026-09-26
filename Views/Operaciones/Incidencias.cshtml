@@ -8,7 +8,7 @@
 }
 <section class="ops-hero">
     <p class="ops-eyebrow">Operaciones · Bicicletas compartidas</p>
-    <h1>Incidencias abiertas encontradas con consulta rápida</h1>
+    <h1>Incidencias abiertas encontradas con consulta rápida en tiempo real</h1>
     <p class="ops-subtitle">Averías por estación: busca, prioriza y cierra. La lista se mantiene al día.</p>
 </section>
 
@@ -80,5 +80,47 @@ else
 }
 
 @section Scripts {
-    @* C (PieSocket) se conecta aquí sin recargar; al reconectar consulta estado vigente. *@
+    <script src="https://unpkg.com/piesocket-js"></script>
+    <script>
+        (function () {
+            var status = document.getElementById('ws-status');
+            function setStatus(txt, live) {
+                if (!status) return;
+                status.textContent = 'Tiempo real: ' + txt;
+                status.classList.toggle('ops-pill-hit', !!live);
+            }
+            function removeRow(id) {
+                var row = document.getElementById('row-' + id);
+                if (!row) return;
+                row.style.transition = 'opacity .4s';
+                row.style.opacity = '0';
+                setTimeout(function () { row.remove(); }, 450);
+            }
+            // Al (re)conectar, consultar el estado vigente y reconciliar.
+            function reconcile() {
+                fetch('@Url.Action("Estado", "Operaciones")')
+                    .then(function (r) { return r.json(); })
+                    .then(function (estados) {
+                        estados.forEach(function (e) {
+                            if ((e.estado || e.Estado) === 'Cerrada') removeRow(e.id || e.Id);
+                        });
+                    })
+                    .catch(function () { /* se reintenta en la próxima conexión */ });
+            }
+            var key = '@ViewBag.PieKey';
+            if (!key) { setStatus('sin clave', false); return; }
+            try {
+                var ps = new PieSocket({ clusterId: '@ViewBag.PieCluster', apiKey: key, notifySelf: 1 });
+                ps.subscribe('@ViewBag.PieChannel').then(function (ch) {
+                    setStatus('conectado', true);
+                    reconcile();
+                    ch.listen('IncidenciaActualizada', function (data) {
+                        var id = data && (data.Id || data.id);
+                        if (id) removeRow(id);
+                    });
+                    ch.on('close', function () { setStatus('reconectando…', false); });
+                }).catch(function () { setStatus('desconectado', false); });
+            } catch (e) { setStatus('desconectado', false); }
+        })();
+    </script>
 }

@@ -17,17 +17,21 @@ public class OperacionesController : Controller
     private readonly ApplicationDbContext _db;
     private readonly IAlgoliaService _algolia;
     private readonly IDistributedCache _cache;
+    private readonly IPieSocketPublisher _pie;
     private readonly ILogger<OperacionesController> _log;
 
-    public OperacionesController(ApplicationDbContext db, IAlgoliaService algolia, IDistributedCache cache, ILogger<OperacionesController> log)
+    public OperacionesController(ApplicationDbContext db, IAlgoliaService algolia, IDistributedCache cache, IPieSocketPublisher pie, ILogger<OperacionesController> log)
     {
-        _db = db; _algolia = algolia; _cache = cache; _log = log;
+        _db = db; _algolia = algolia; _cache = cache; _pie = pie; _log = log;
     }
 
     // GET /Operaciones/Incidencias?q=
     public async Task<IActionResult> Incidencias(string? q)
     {
         ViewBag.Q = q ?? "";
+        // Clave pública (client key): apta para el navegador. El Secret jamás sale del servidor.
+        ViewBag.PieCluster = Environment.GetEnvironmentVariable("PIESOCKET_CLUSTER") ?? "free.blr2";
+        ViewBag.PieKey = Environment.GetEnvironmentVariable("PIESOCKET_API_KEY") ?? "";
         ViewBag.PieChannel = Environment.GetEnvironmentVariable("PIESOCKET_CHANNEL") ?? "incidencias";
 
         if (!string.IsNullOrWhiteSpace(q))
@@ -94,9 +98,18 @@ public class OperacionesController : Controller
             {
                 _log.LogWarning(ex, "No se pudo invalidar Redis tras cerrar {Id}", id);
             }
-            // C: publicar IncidenciaActualizada aquí.
+            // C: publicar IncidenciaActualizada DESPUÉS de persistir.
+            await _pie.PublishAsync("IncidenciaActualizada", new { Id = id, Estado = "Cerrada" });
             _log.LogInformation("Incidencia {Id} cerrada", id);
         }
         return RedirectToAction(nameof(Incidencias));
+    }
+    // GET /Operaciones/Estado -> estado vigente para reconciliar al reconectar WS.
+    [HttpGet]
+    public async Task<IActionResult> Estado()
+    {
+        var estados = await _db.Incidencias
+            .Select(i => new { id = i.Id, estado = i.Estado }).ToListAsync();
+        return Json(estados);
     }
 }

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: bici-incidencias
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ALGOLIA_APP_ID
+        value: RPM5TMS1CI
+      - key: ALGOLIA_INDEX
+        value: incidencias
+      - key: ALGOLIA_SEARCH_KEY
+        sync: false
+      - key: REDIS_CONNECTION
+        sync: false
+      - key: PIESOCKET_CLUSTER
+        value: free.blr2
+      - key: PIESOCKET_API_KEY
+        sync: false
+      - key: PIESOCKET_API_SECRET
+        sync: false
+      - key: PIESOCKET_CHANNEL
+        value: incidencias
