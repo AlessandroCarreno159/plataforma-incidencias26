@@ -17,6 +17,11 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IAlgoliaService, AlgoliaService>();
 
+// Pregunta 2 (Redis): caché distribuida para el listado general.
+// Sin REDIS_CONNECTION apunta a localhost y el controller cae a DB con log honesto.
+var redisConn = Environment.GetEnvironmentVariable("REDIS_CONNECTION") ?? "localhost:6379,abortConnect=false";
+builder.Services.AddStackExchangeRedisCache(o => o.Configuration = redisConn);
+
 var app = builder.Build();
 await SeedData.EnsureSeedAsync(app.Services);
 

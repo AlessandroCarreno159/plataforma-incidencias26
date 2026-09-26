@@ -137,6 +137,7 @@ body {
   color: #6b5c4e;
 }
 .ops-pill-muted { opacity: 0.85; }
+.ops-pill-hit { background: #dde7da; border-color: #5f7a5e; color: #48604a; font-weight: 600; }
 
 /* Table card */
 .ops-card {
