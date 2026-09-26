@@ -1,0 +1,84 @@
+@model IEnumerable<bici_bussiness.Models.Incidencia>
+@{
+    ViewData["Title"] = "Incidencias";
+    var q = (string)(ViewBag.Q ?? "");
+    var total = Model.Count();
+    var altas = Model.Count(i => i.Prioridad == "Alta");
+    var topEstacion = Model.GroupBy(i => i.Estacion).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault() ?? "—";
+}
+<section class="ops-hero">
+    <p class="ops-eyebrow">Operaciones · Bicicletas compartidas</p>
+    <h1>Incidencias abiertas encontradas</h1>
+    <p class="ops-subtitle">Averías por estación: busca, prioriza y cierra. La lista se mantiene al día.</p>
+</section>
+
+<div class="row g-3 mb-4 ops-stats">
+    <div class="col-6 col-md-4">
+        <div class="ops-stat"><span class="ops-stat-num">@total</span><span class="ops-stat-label">Abiertas</span></div>
+    </div>
+    <div class="col-6 col-md-4">
+        <div class="ops-stat ops-stat-alert"><span class="ops-stat-num">@altas</span><span class="ops-stat-label">Prioridad alta</span></div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="ops-stat"><span class="ops-stat-num ops-stat-text">@topEstacion</span><span class="ops-stat-label">Estación con más averías</span></div>
+    </div>
+</div>
+
+<form method="get" asp-action="Incidencias" class="ops-search mb-2" role="search">
+    <input id="q" name="q" value="@q" class="form-control ops-search-input" placeholder="Buscar estación o avería… (ej. Miraflores, freno)" autocomplete="off" />
+    <button type="submit" class="btn ops-btn-primary">Buscar</button>
+    <a asp-action="Incidencias" class="btn ops-btn-ghost">Limpiar</a>
+</form>
+<p class="ops-hint mb-3">Búsqueda por estación o descripción. Sin texto se muestra el listado habitual.</p>
+@if (!string.IsNullOrWhiteSpace(q))
+{
+    <p class="ops-result-count">@total resultado(s) para “@q”</p>
+}
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <span id="cache-status" class="ops-pill">Consulta rápida: @ViewBag.CacheStatus</span>
+    <span id="ws-status" class="ops-pill ops-pill-muted">Tiempo real: desconectado</span>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="ops-empty">
+        <p class="ops-empty-title">Sin incidencias abiertas@(string.IsNullOrWhiteSpace(q) ? "" : $" para “{q}”")</p>
+        <p class="ops-empty-sub">Prueba con otra estación o descripción, o limpia la búsqueda.</p>
+    </div>
+}
+else
+{
+    <div class="ops-card table-responsive">
+        <table id="tabla-incidencias" class="table ops-table mb-0">
+            <thead>
+                <tr><th>Estación</th><th>Avería</th><th>Prioridad</th><th>Reporte</th><th>Estado</th><th class="text-end">Acción</th></tr>
+            </thead>
+            <tbody>
+            @foreach (var i in Model)
+            {
+                <tr id="row-@i.Id" class="@(i.Prioridad == "Alta" ? "ops-row-alert" : "")">
+                    <td class="ops-estacion">@i.Estacion</td>
+                    <td>@i.Descripcion</td>
+                    <td><span class="ops-prio ops-prio-@i.Prioridad.ToLower()">@i.Prioridad</span></td>
+                    <td class="text-muted small">@i.FechaReporte.ToLocalTime().ToString("dd/MM HH:mm")</td>
+                    <td><span class="ops-estado ops-estado-@i.Estado.ToLower()">@i.Estado</span></td>
+                    <td class="text-end">
+                        @if (i.Estado == "Abierta")
+                        {
+                            <form method="post" asp-action="Cerrar" asp-route-id="@i.Id" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm ops-btn-close btn-cerrar">Cerrar</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    @* C (PieSocket) se conecta aquí sin recargar; al reconectar consulta estado vigente. *@
+}

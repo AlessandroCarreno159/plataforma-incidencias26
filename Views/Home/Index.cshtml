@@ -1,0 +1,54 @@
+﻿@{
+    ViewData["Title"] = "BiciOps · Operaciones";
+}
+<section class="home-hero" id="contexto">
+    <p class="ops-eyebrow">BiciOps · Bicicletas compartidas</p>
+    <h1 class="home-title">Averías bajo control, estaciones en marcha</h1>
+    <p class="home-lead">
+        Operamos una red de bicicletas compartidas y registramos cada avería por estación:
+        estación, descripción, prioridad y estado (Abierta o Cerrada). El equipo de Operaciones
+        necesita <strong>buscar averías</strong> al instante, <strong>consultar el listado con rapidez</strong> y
+        <strong>conocer al segundo los cambios de estado</strong>.
+    </p>
+    <p class="home-lead">
+        Tres desarrollos avanzan en simultáneo sobre la misma pantalla — búsqueda, caché y tiempo real —
+        y deben fusionarse sin perder funciones y funcionando en producción.
+    </p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <a class="btn ops-btn-primary" asp-controller="Operaciones" asp-action="Incidencias">Ver incidencias</a>
+        <a class="btn ops-btn-ghost" href="#capacidades">Cómo funciona</a>
+    </div>
+</section>
+
+<section id="capacidades" class="home-cards row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="home-card">
+            <p class="ops-eyebrow">Búsqueda</p>
+            <h2 class="home-card-title">Buscar averías</h2>
+            <p>Por nombre de estación o descripción, con el servidor consultando el índice y mostrando solo incidencias abiertas.</p>
+            <span class="ops-pill">Rama A · buscador activo</span>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="home-card">
+            <p class="ops-eyebrow">Rapidez</p>
+            <h2 class="home-card-title">Listado en segundos</h2>
+            <p>El listado general se sirve desde caché por 60 segundos; al cerrar una incidencia se invalida y se vuelve a consultar.</p>
+            <span class="ops-pill">Rama B · caché de 60 s</span>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="home-card">
+            <p class="ops-eyebrow">Tiempo real</p>
+            <h2 class="home-card-title">Cambios al instante</h2>
+            <p>Al cerrar, se guarda el estado y se publica el evento; la pantalla se actualiza sin recargar y al reconectar consulta lo vigente.</p>
+            <span class="ops-pill">Rama C · canal en vivo</span>
+        </div>
+    </div>
+</section>
+
+<section class="home-flow mb-4">
+    <p class="ops-eyebrow">Flujo de integración</p>
+    <p class="mb-1"><strong>Rama A</strong> búsqueda &rarr; <strong>Rama B</strong> caché &rarr; <strong>Rama C</strong> tiempo real &rarr; fusión A &rarr; B &rarr; C hacia <code>main</code>, desplegado en Render.</p>
+    <p class="ops-hint mb-0">Cuenta demo: <code>supervisor@test.com</code> · <a asp-area="Identity" asp-page="/Account/Login">Iniciar sesión</a></p>
+</section>
